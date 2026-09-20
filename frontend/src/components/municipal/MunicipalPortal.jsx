@@ -166,7 +166,7 @@ export const TRIAGE_QUEUE_DATA = [
   }
 ];
 
-export default function MunicipalPortal({ onLogout, lang, setLang, t }) {
+export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRole }) {
   const [activeTab, setActiveTab] = useState('review-queue'); // 'review-queue' | 'ward-heatmap' | 'contractor-scorecards' | 'audit-ledger'
   const [selectedDocket, setSelectedDocket] = useState(TRIAGE_QUEUE_DATA[0]);
   const [searchFilter, setSearchFilter] = useState('');
@@ -420,6 +420,28 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t }) {
               <span className="material-symbols-outlined text-[20px]">tune</span>
             </button>
 
+            {onSwitchRole && (
+              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#eef7ee] border border-[#d2e7d3]">
+                <span className="text-[11px] font-bold text-[#1b5e20] uppercase mr-1">Field Apps:</span>
+                <button
+                  type="button"
+                  onClick={() => onSwitchRole('citizen')}
+                  className="px-2.5 py-1 rounded-lg bg-white text-[#1b5e20] hover:bg-[#1b5e20] hover:text-white transition-all text-[11px] font-bold shadow-xs border border-[#d2e7d3] flex items-center gap-1"
+                >
+                  <span>🧑</span>
+                  <span>Citizen App</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSwitchRole('contractor')}
+                  className="px-2.5 py-1 rounded-lg bg-white text-[#1b5e20] hover:bg-[#1b5e20] hover:text-white transition-all text-[11px] font-bold shadow-xs border border-[#d2e7d3] flex items-center gap-1"
+                >
+                  <span>👷</span>
+                  <span>Contractor App</span>
+                </button>
+              </div>
+            )}
+
             {/* Officer Profile Badge */}
             <div className="flex items-center gap-3 pl-3 border-l border-[#e0ece2]">
               <img
@@ -435,6 +457,14 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t }) {
                   Chief Roads Inspector
                 </span>
               </div>
+
+              <button
+                onClick={onLogout}
+                className="w-8 h-8 rounded-xl hover:bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center transition-colors ml-1"
+                title={t.logout}
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+              </button>
             </div>
           </div>
         </header>

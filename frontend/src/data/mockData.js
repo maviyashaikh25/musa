@@ -14,7 +14,7 @@ export const MOCK_USERS = {
     company: "Apex Paving Ltd.",
     crew: "Crew #4",
     role: "contractor",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuXLv7IVUHyVF8kxJkn7G6gljIwXAPqa7hjJQi87V2SZeEJu_6Sp5GQ3r5QD28837IwOLgoi-26Q4CWnZs_uuFDuZxFXxGp6UBM-Xl5EVfM-B_1tXzLaEIYSlh0R-y0syoBH5ldXENT-76xi0sNC8ZRFI2zr3RfQgq7WYUwXmpHtT-8pta-GagX8iBOD_JmhRRLIGDUGZB7leX1axyb3Ufjr2yHSxxJUeOJTIroPiTiuCGHixjw-405IPiQa",
+    avatar: "https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=400&auto=format&fit=crop&q=80",
     ward: "Ward 14 / Ward K-West",
     rating: "4.9 ★",
     verifiedRate: "96.8%",

@@ -10,21 +10,21 @@ export default function BottomNav({ activeScreen, setActiveScreen, t }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe bg-[#f2fcf4]/95 backdrop-blur-xl shadow-[0_-4px_20px_rgba(46,125,50,0.06)] border-t border-[#e6f0e8]">
-      <div className="h-18 px-4 max-w-xl mx-auto flex items-center justify-around">
+    <nav className="sticky bottom-0 left-0 right-0 z-30 shrink-0 bg-[#f2fcf4]/95 backdrop-blur-xl border-t border-[#e6f0e8] shadow-[0_-4px_16px_rgba(46,125,50,0.05)]">
+      <div className="h-16 px-2 w-full flex items-center justify-around">
         {navItems.map((item) => {
           if (item.isCenter) {
             return (
-              <div key={item.id} className="relative -top-4 flex flex-col items-center justify-center">
+              <div key={item.id} className="relative -top-3.5 flex flex-col items-center justify-center">
                 <button
                   aria-label={t.reportBtn}
                   onClick={() => setActiveScreen('report')}
-                  className="flex items-center justify-center w-14 h-14 rounded-full bg-[#2e7d32] text-white shadow-[0_8px_20px_rgba(46,125,50,0.38)] active:scale-95 active:bg-[#0d631b] hover:bg-[#1b6d24] transition-all"
+                  className="flex items-center justify-center w-[52px] h-[52px] rounded-full bg-[#2e7d32] text-white shadow-[0_6px_18px_rgba(46,125,50,0.38)] active:scale-95 active:bg-[#0d631b] hover:bg-[#1b6d24] transition-all ring-4 ring-white"
                   type="button"
                 >
-                  <span className="material-symbols-outlined text-[28px]">{item.icon}</span>
+                  <span className="material-symbols-outlined text-[26px]">{item.icon}</span>
                 </button>
-                <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold text-[#0d631b] mt-1">
+                <span className="font-['Plus_Jakarta_Sans'] text-[10px] font-bold text-[#0d631b] mt-0.5">
                   {item.label}
                 </span>
               </div>
@@ -36,15 +36,15 @@ export default function BottomNav({ activeScreen, setActiveScreen, t }) {
             <button
               key={item.id}
               onClick={() => setActiveScreen(item.id)}
-              className={`flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[44px] transition-colors ${
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-[50px] min-h-[40px] transition-colors ${
                 isActive ? 'text-[#0d631b] font-bold' : 'text-[#546346] hover:text-[#151d19]'
               }`}
               type="button"
             >
-              <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
                 {item.icon}
               </span>
-              <span className="font-['Plus_Jakarta_Sans'] text-[11px]">
+              <span className="font-['Plus_Jakarta_Sans'] text-[10px]">
                 {item.label}
               </span>
             </button>

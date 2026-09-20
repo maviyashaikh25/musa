@@ -15,8 +15,8 @@ export default function Header({
   const isHome = activeScreen === 'home';
 
   return (
-    <header className="fixed top-0 w-full z-50 pt-safe bg-[#f2fcf4]/90 backdrop-blur-xl shadow-[0_1px_12px_rgba(46,125,50,0.05)] border-b border-[#e6f0e8]/80">
-      <div className="h-16 px-4 max-w-xl mx-auto flex items-center justify-between gap-2">
+    <header className="sticky top-0 w-full z-30 shrink-0 bg-[#f2fcf4]/95 backdrop-blur-md border-b border-[#e6f0e8]/80 shadow-[0_1px_10px_rgba(46,125,50,0.04)]">
+      <div className="h-14 px-3 w-full flex items-center justify-between gap-1.5">
         {/* Left: Logo or Back Button */}
         <div className="flex items-center gap-2 min-w-0">
           {!isHome && (
