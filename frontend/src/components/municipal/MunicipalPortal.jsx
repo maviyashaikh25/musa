@@ -167,10 +167,11 @@ export const TRIAGE_QUEUE_DATA = [
 ];
 
 export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRole }) {
-  const [activeTab, setActiveTab] = useState('review-queue'); // 'review-queue' | 'ward-heatmap' | 'contractor-scorecards' | 'audit-ledger'
+  const [activeTab, setActiveTab] = useState('review-queue');
+  const [docketsList, setDocketsList] = useState(TRIAGE_QUEUE_DATA);
   const [selectedDocket, setSelectedDocket] = useState(TRIAGE_QUEUE_DATA[0]);
   const [searchFilter, setSearchFilter] = useState('');
-  const [queueFilter, setQueueFilter] = useState('all'); // 'all' | 'ai-verified' | 'disputed' | 'approved'
+  const [queueFilter, setQueueFilter] = useState('all');
   const [actionNotice, setActionNotice] = useState(null);
   const [defectFilter, setDefectFilter] = useState('potholes');
   const [timeRange, setTimeRange] = useState('30d');
@@ -178,95 +179,94 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
   const [selectedHotspot, setSelectedHotspot] = useState(true);
   const [isVerifyingChain, setIsVerifyingChain] = useState(false);
   const [chainVerified, setChainVerified] = useState(true);
+  const [auditFilter, setAuditFilter] = useState('all');
 
-  const canvasRef = useRef(null);
+  // Modals
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [selectedAuditBlock, setSelectedAuditBlock] = useState(null);
+  const [inspectContractor, setInspectContractor] = useState(null);
 
-  // Keyboard shortcut listener (Press A to approve, R to request rework)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'a' || e.key === 'A') {
-        handleApprove();
-      } else if (e.key === 'r' || e.key === 'R') {
-        handleRework();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDocket]);
+  // Contractors & Scorecards State
+  const [contractorsList, setContractorsList] = useState([
+    {
+      id: "APEX-01",
+      name: "Apex Paving Ltd.",
+      lead: "Rajesh Shinde",
+      crew: "Crew #4",
+      avatar: "/rajesh_shinde.jpg",
+      tier: "Tier 1 Verified",
+      rating: "4.9 ",
+      slaRate: 96.8,
+      completed: 142,
+      firstPassRate: 98.4,
+      avgResponse: "14.2h",
+      payoutTotal: "₹14,80,000",
+      penalties: "₹0",
+      status: "Good Standing",
+      statusType: "good",
+      ward: "Ward 14 • Maplewood",
+      phone: "+91 98334 10294"
+    },
+    {
+      id: "HRTG-02",
+      name: "Heritage Paving Infra",
+      lead: "Amit Patil",
+      crew: "Crew #2",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+      tier: "Tier 1 Verified",
+      rating: "4.8 ",
+      slaRate: 98.2,
+      completed: 198,
+      firstPassRate: 97.9,
+      avgResponse: "12.8h",
+      payoutTotal: "₹22,10,000",
+      penalties: "₹0",
+      status: "Good Standing",
+      statusType: "good",
+      ward: "Ward K/W • Andheri West",
+      phone: "+91 98205 77192"
+    },
+    {
+      id: "METRO-03",
+      name: "Metro Asphalt Works",
+      lead: "Vikram Deshmukh",
+      crew: "Crew #3",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80",
+      tier: "Tier 2 Active",
+      rating: "4.5 ",
+      slaRate: 91.5,
+      completed: 115,
+      firstPassRate: 89.2,
+      avgResponse: "22.4h",
+      payoutTotal: "₹11,20,000",
+      penalties: "₹30,000",
+      status: "SLA Warning",
+      statusType: "warning",
+      ward: "Ward A • Colaba",
+      phone: "+91 98190 44820"
+    },
+    {
+      id: "MUMBAI-04",
+      name: "Mumbai Infra Roads",
+      lead: "Sunil Jadhav",
+      crew: "Crew #1",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=80",
+      tier: "Tier 3 Under Review",
+      rating: "3.6 ",
+      slaRate: 82.1,
+      completed: 88,
+      firstPassRate: 78.5,
+      avgResponse: "38.6h",
+      payoutTotal: "₹6,40,000",
+      penalties: "₹1,50,000",
+      status: "Penalized (Sec 12-B)",
+      statusType: "danger",
+      ward: "Ward G/N • Dadar",
+      phone: "+91 98920 11983"
+    }
+  ]);
 
-  // Draw connecting keypoint lines between photos
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !selectedDocket) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!selectedDocket.anchors || selectedDocket.anchors.length === 0) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    const midX = w / 2;
-
-    selectedDocket.anchors.forEach((pt) => {
-      const x1 = (pt.x1 / 100) * midX;
-      const y1 = (pt.y1 / 100) * h;
-      const x2 = midX + (pt.x2 / 100) * midX;
-      const y2 = (pt.y2 / 100) * h;
-
-      // Draw dotted green vector line connecting landmarks
-      ctx.beginPath();
-      ctx.setLineDash([5, 4]);
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
-
-      // Anchor point 1 (Left Before photo)
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(x1, y1, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#166534';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
-      // Anchor point 2 (Right After photo)
-      ctx.beginPath();
-      ctx.arc(x2, y2, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#22c55e';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-    });
-  }, [selectedDocket]);
-
-  const handleApprove = () => {
-    setActionNotice({
-      type: 'approved',
-      msg: `Docket ${selectedDocket.id} Approved! Payout authorized for ${selectedDocket.contractor}. Merkle Block #${Math.floor(1400 + Math.random() * 50)} cryptographically sealed.`
-    });
-    setTimeout(() => setActionNotice(null), 5000);
-  };
-
-  const handleRework = () => {
-    setActionNotice({
-      type: 'rework',
-      msg: `Rework order dispatched for ${selectedDocket.id}. 12-hour SLA timer initialized on contractor mobile terminal.`
-    });
-    setTimeout(() => setActionNotice(null), 5000);
-  };
-
-  const handleVerifyChain = () => {
-    setIsVerifyingChain(true);
-    setTimeout(() => {
-      setIsVerifyingChain(false);
-      setChainVerified(true);
-    }, 700);
-  };
 
   return (
     <div className="min-h-screen w-full bg-[#f4f7f4] text-[#151d19] font-['Inter'] flex antialiased">
@@ -332,14 +332,21 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
             </button>
 
             <button
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl font-['Plus_Jakarta_Sans'] text-[13px] font-bold text-[#414d45] hover:bg-[#f0f6f1]"
+              onClick={() => setActiveTab('contractor-batches')}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-['Plus_Jakarta_Sans'] text-[13px] font-bold transition-all ${
+                activeTab === 'contractor-batches'
+                  ? 'bg-[#1b5e20] text-white shadow-xs'
+                  : 'text-[#414d45] hover:bg-[#f0f6f1] hover:text-[#151d19]'
+              }`}
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-[19px]">badge</span>
                 <span>Contractor ID & Batch</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-[#d7e8c3] text-[#1b5e20] text-[10px] font-extrabold">
-                New
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === 'contractor-batches' ? 'bg-white/20 text-white' : 'bg-[#d7e8c3] text-[#1b5e20]'
+              }`}>
+                Live
               </span>
             </button>
 
@@ -356,14 +363,22 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
             </button>
 
             <button
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-['Plus_Jakarta_Sans'] text-[13px] font-bold text-[#414d45] hover:bg-[#f0f6f1]"
+              onClick={() => setActiveTab('settings')}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-['Plus_Jakarta_Sans'] text-[13px] font-bold transition-all ${
+                activeTab === 'settings'
+                  ? 'bg-[#1b5e20] text-white shadow-xs'
+                  : 'text-[#414d45] hover:bg-[#f0f6f1] hover:text-[#151d19]'
+              }`}
             >
               <span className="material-symbols-outlined text-[19px]">settings</span>
               <span>Settings</span>
             </button>
 
             <div className="pt-4">
-              <button className="w-full py-2 px-3 rounded-xl border border-dashed border-[#b6ccb9] text-[#1b5e20] hover:bg-[#eef7ee] font-['Plus_Jakarta_Sans'] text-[12px] font-bold flex items-center justify-center gap-1.5 transition-colors">
+              <button
+                onClick={() => setShowBatchModal(true)}
+                className="w-full py-2 px-3 rounded-xl border border-dashed border-[#b6ccb9] text-[#1b5e20] hover:bg-[#eef7ee] font-['Plus_Jakarta_Sans'] text-[12px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              >
                 <span className="material-symbols-outlined text-[16px]">add</span>
                 <span>Create Batch / Contractor ID</span>
               </button>
@@ -428,7 +443,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                   onClick={() => onSwitchRole('citizen')}
                   className="px-2.5 py-1 rounded-lg bg-white text-[#1b5e20] hover:bg-[#1b5e20] hover:text-white transition-all text-[11px] font-bold shadow-xs border border-[#d2e7d3] flex items-center gap-1"
                 >
-                  <span>🧑</span>
+                  <span className="material-symbols-outlined text-[18px]">person</span>
                   <span>Citizen App</span>
                 </button>
                 <button
@@ -436,7 +451,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                   onClick={() => onSwitchRole('contractor')}
                   className="px-2.5 py-1 rounded-lg bg-white text-[#1b5e20] hover:bg-[#1b5e20] hover:text-white transition-all text-[11px] font-bold shadow-xs border border-[#d2e7d3] flex items-center gap-1"
                 >
-                  <span>👷</span>
+                  <span className="material-symbols-outlined text-[18px]">engineering</span>
                   <span>Contractor App</span>
                 </button>
               </div>
@@ -615,8 +630,10 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                       </span>
                       <input
                         type="text"
-                        placeholder="Filter ID or street..."
-                        className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#f4f8f4] border border-[#e0ece2] text-[12px] placeholder-[#7a887d] focus:outline-none"
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                        placeholder="Filter ID, street, contractor..."
+                        className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#f4f8f4] border border-[#e0ece2] text-[12px] placeholder-[#7a887d] focus:outline-none focus:border-[#1b5e20]"
                       />
                     </div>
                     <select className="px-2.5 py-1.5 rounded-xl bg-[#f4f8f4] border border-[#e0ece2] text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#151d19] focus:outline-none">
@@ -629,9 +646,9 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                   {/* Filter Pills */}
                   <div className="flex items-center gap-1.5 pt-1 overflow-x-auto no-scrollbar">
                     {[
-                      { key: 'all', label: 'All Pending (38)' },
-                      { key: 'ai-verified', label: 'AI Verified (24)' },
-                      { key: 'disputed', label: 'Disputed (9)' },
+                      { key: 'all', label: `All (${docketsList.length})` },
+                      { key: 'ai-verified', label: 'AI Verified' },
+                      { key: 'disputed', label: 'Disputed' },
                       { key: 'approved', label: 'Approved' }
                     ].map((pill) => (
                       <button
@@ -651,81 +668,106 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
 
                 {/* Queue Cards List */}
                 <div className="flex flex-col gap-2.5">
-                  {TRIAGE_QUEUE_DATA.map((item) => {
-                    const isSelected = selectedDocket.id === item.id;
-                    const isMismatch = item.matchColor === 'red';
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => setSelectedDocket(item)}
-                        className={`p-3.5 rounded-2xl bg-white border cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-[#1b5e20] ring-2 ring-[#1b5e20]/25 shadow-md'
-                            : 'border-[#e0ece2] hover:border-[#b6ccb9] shadow-xs'
-                        }`}
+                  {filteredDockets.length === 0 ? (
+                    <div className="p-8 rounded-2xl bg-white border border-[#e0ece2] text-center flex flex-col items-center justify-center gap-2 shadow-xs">
+                      <span className="material-symbols-outlined text-[36px] text-[#7a887d]">search_off</span>
+                      <span className="font-['Plus_Jakarta_Sans'] font-bold text-[14px] text-[#151d19]">No reports match your search</span>
+                      <span className="text-[12px] text-[#6f7e73]">Try clearing search keywords or switching filters.</span>
+                      <button 
+                        onClick={() => { setSearchFilter(''); setQueueFilter('all'); }}
+                        className="mt-2 px-3 py-1.5 rounded-xl bg-[#eef7ee] hover:bg-[#d7e8c3] text-[#1b5e20] text-[11px] font-bold transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-[12px] font-bold text-[#151d19]">
-                              {item.id}
-                            </span>
+                        Reset Filters
+                      </button>
+                    </div>
+                  ) : (
+                    filteredDockets.map((item) => {
+                      const isSelected = selectedDocket && selectedDocket.id === item.id;
+                      const isMismatch = item.matchColor === 'red';
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => setSelectedDocket(item)}
+                          className={`p-3.5 rounded-2xl bg-white border cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-[#1b5e20] ring-2 ring-[#1b5e20]/25 shadow-md'
+                              : 'border-[#e0ece2] hover:border-[#b6ccb9] shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[12px] font-bold text-[#151d19]">
+                                {item.id}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-['Plus_Jakarta_Sans'] font-bold ${
+                                  isMismatch
+                                    ? 'bg-[#ffdad6] text-[#ba1a1a]'
+                                    : 'bg-[#d7e8c3] text-[#1b5e20]'
+                                }`}
+                              >
+                                {isMismatch ? ' ' : ' '}
+                                {item.matchScore}
+                              </span>
+                            </div>
                             <span
                               className={`px-2 py-0.5 rounded-full text-[10px] font-['Plus_Jakarta_Sans'] font-bold ${
-                                isMismatch
+                                item.sla.includes('left')
                                   ? 'bg-[#ffdad6] text-[#ba1a1a]'
-                                  : 'bg-[#d7e8c3] text-[#1b5e20]'
+                                  : 'bg-[#f0f6f1] text-[#6f7e73]'
                               }`}
                             >
-                              {isMismatch ? '⚠️ ' : '✓ '}
-                              {item.matchScore}
+                              {item.sla}
                             </span>
                           </div>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-['Plus_Jakarta_Sans'] font-bold ${
-                              item.sla.includes('left')
-                                ? 'bg-[#ffdad6] text-[#ba1a1a]'
-                                : 'bg-[#f0f6f1] text-[#6f7e73]'
-                            }`}
-                          >
-                            {item.sla}
-                          </span>
+
+                          <h4 className="font-['Plus_Jakarta_Sans'] font-bold text-[14px] text-[#151d19] mt-1.5">
+                            {item.address}
+                          </h4>
+
+                          <div className="flex items-center justify-between text-[11px] text-[#6f7e73] mt-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[14px] text-[#ba1a1a]">
+                                dangerous
+                              </span>
+                              <span className="truncate">{item.hazardType}</span>
+                            </div>
+                            <span className="truncate max-w-[140px] text-right font-medium text-[#414d45]">
+                              {item.contractor}
+                            </span>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#f0f4f0] text-[11px]">
+                            <span className="text-[#6f7e73]">
+                              Depth: <strong className="text-[#151d19]">{item.depth}</strong>
+                            </span>
+                            <span className={`font-bold ${
+                              item.status === 'Approved' ? 'text-[#1b5e20]' : item.status === 'Rejected & Fined' ? 'text-[#ba1a1a]' : 'text-[#6f7e73]'
+                            }`}>
+                              {item.status}
+                            </span>
+                          </div>
+
+                          {/* Sign-off Ready footer for top item */}
+                          {item.status === 'Sign-off Ready' && (
+                            <div className="mt-2.5 pt-2 border-t border-[#f0f4f0] flex items-center justify-between text-[11px]">
+                              <span className="font-bold text-[#1b5e20]">Sign-off Ready</span>
+                              <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1b5e20] flex items-center gap-0.5">
+                                <span>Inspect Evidence</span>
+                                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                              </span>
+                            </div>
+                          )}
+                          {item.status === 'Flagged Discrepancy' && (
+                            <div className="mt-2.5 pt-2 border-t border-[#f0f4f0] flex items-center justify-between text-[11px]">
+                              <span className="font-bold text-[#ba1a1a]">Landmark Flagged</span>
+                              <span className="text-[#ba1a1a] font-bold">Inspect Warning →</span>
+                            </div>
+                          )}
                         </div>
-
-                        <h4 className="font-['Plus_Jakarta_Sans'] font-bold text-[14px] text-[#151d19] mt-1.5">
-                          {item.address}
-                        </h4>
-
-                        <div className="flex items-center justify-between text-[11px] text-[#6f7e73] mt-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[14px] text-[#ba1a1a]">
-                              dangerous
-                            </span>
-                            <span className="truncate">{item.hazardType}</span>
-                          </div>
-                          <span className="truncate max-w-[140px] text-right font-medium text-[#414d45]">
-                            {item.contractor}
-                          </span>
-                        </div>
-
-                        {/* Sign-off Ready footer for top item */}
-                        {item.status === 'Sign-off Ready' && (
-                          <div className="mt-2.5 pt-2 border-t border-[#f0f4f0] flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-[#1b5e20]">Sign-off Ready</span>
-                            <span className="font-['Plus_Jakarta_Sans'] font-bold text-[#1b5e20] flex items-center gap-0.5">
-                              <span>Inspect Evidence</span>
-                              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                            </span>
-                          </div>
-                        )}
-                        {item.status === 'Flagged Discrepancy' && (
-                          <div className="mt-2.5 pt-2 border-t border-[#f0f4f0] flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-[#ba1a1a]">Landmark Flagged</span>
-                            <span className="text-[#ba1a1a] font-bold">Inspect Warning →</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -770,7 +812,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                       </h4>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-[#d7e8c3] text-[#1b5e20] text-[11px] font-['Plus_Jakarta_Sans'] font-bold flex items-center gap-1">
-                      <span>✨</span>
+                      <span className="material-symbols-outlined text-[18px]">verified</span>
                       <span>{selectedDocket.homographyConfidence} Homography Confidence</span>
                     </span>
                   </div>
@@ -930,13 +972,8 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                         </button>
 
                         <button
-                          onClick={() => {
-                            setActionNotice({
-                              type: 'rework',
-                              msg: `Claim ${selectedDocket.id} Rejected. Contractor penalized under Section 12-B.`
-                            });
-                          }}
-                          className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#ba1a1a] hover:underline"
+                          onClick={handleRejectClaim}
+                          className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#ba1a1a] hover:underline cursor-pointer"
                         >
                           Reject Claim
                         </button>
@@ -1137,7 +1174,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#f0f4f0] text-[11px]">
                   <span className="text-[#6f7e73]">Benchmark: &lt; 40.0 hrs</span>
-                  <span className="text-[#1b5e20] font-bold">✓ On Track</span>
+                  <span className="text-[#1b5e20] font-bold"><span className="material-symbols-outlined text-[14px] inline mr-1 text-[#1b5e20]">check_circle</span>On Track</span>
                 </div>
               </div>
 
@@ -1188,7 +1225,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                           mapLayer === 'heatmap' ? 'bg-[#1b5e20] text-white shadow-xs' : 'text-[#414d45]'
                         }`}
                       >
-                        🔥 Heatmap
+                        <span className="material-symbols-outlined text-[16px] inline mr-1">local_fire_department</span>Heatmap
                       </button>
                       <button
                         onClick={() => setMapLayer('territories')}
@@ -1196,7 +1233,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                           mapLayer === 'territories' ? 'bg-[#1b5e20] text-white shadow-xs' : 'text-[#414d45]'
                         }`}
                       >
-                        🗺️ Territories
+                        <span className="material-symbols-outlined text-[16px] inline mr-1">map</span>Territories
                       </button>
                       <button
                         onClick={() => setMapLayer('historical')}
@@ -1204,7 +1241,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                           mapLayer === 'historical' ? 'bg-[#1b5e20] text-white shadow-xs' : 'text-[#414d45]'
                         }`}
                       >
-                        🕒 Historical
+                        <span className="material-symbols-outlined text-[16px] inline mr-1">history</span>Historical
                       </button>
                     </div>
                   </div>
@@ -1239,7 +1276,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
 
                     {/* Green Fix Pin */}
                     <div className="absolute bottom-28 left-[280px] z-10 w-6 h-6 rounded-full bg-[#1b5e20] text-white flex items-center justify-center font-bold text-[11px] shadow-md ring-2 ring-emerald-200">
-                      ✓
+                      
                     </div>
 
                     {/* INTERACTIVE HOTSPOT POPUP DIALOG (Elm Street Corridor) */}
@@ -1568,7 +1605,7 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
                           </div>
                           <div>
                             <span className="font-['Plus_Jakarta_Sans'] font-bold text-[12px] text-[#151d19] block leading-tight">
-                              QuickPatch Co. 🚩
+                              QuickPatch Co. <span className="material-symbols-outlined text-[13px] inline text-amber-600">flag</span>
                             </span>
                             <span className="text-[10px] text-[#ba1a1a] font-bold">Flagged for Audit</span>
                           </div>
@@ -1654,58 +1691,943 @@ export default function MunicipalPortal({ onLogout, lang, setLang, t, onSwitchRo
           </main>
         )}
 
-        {/* TAB 3: AUDIT LEDGER (Dedicated Merkle Block Explorer) */}
-        {activeTab === 'audit-ledger' && (
-          <main className="p-6 flex flex-col gap-4 max-w-5xl">
-            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[22px] text-[#1b5e20]">lock</span>
-                  <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[18px] text-[#151d19]">
-                    Tamper-Evident SHA-256 Audit Chain
-                  </h3>
+        {/* TAB 3: CONTRACTOR SCORECARDS */}
+        {activeTab === 'contractor-scorecards' && (
+          <main className="p-6 flex flex-col gap-6">
+            {/* Executive Performance Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col justify-between">
+                <span className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#414d45] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-[#1b5e20]">groups</span>
+                  <span>Active Certified Contractors</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-[32px] font-extrabold font-['Plus_Jakarta_Sans'] text-[#151d19]">{contractorsList.length}</span>
+                  <span className="text-[12px] text-[#6f7e73]">authorized vendors</span>
                 </div>
+                <div className="flex items-center gap-2 mt-2 text-[11px] font-bold text-[#1b5e20]">
+                  <span className="w-2 h-2 rounded-full bg-[#1b5e20]"></span>
+                  <span>3 Tier-1 • 1 Under Audit</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col justify-between">
+                <span className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#414d45] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-[#1b5e20]">speed</span>
+                  <span>Mean SLA Compliance</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-[32px] font-extrabold font-['Plus_Jakarta_Sans'] text-[#1b5e20]">94.2%</span>
+                  <span className="text-[12px] text-[#6f7e73]">across all 6 wards</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-[#e0ece2] mt-2 overflow-hidden">
+                  <div className="h-full bg-[#1b5e20] rounded-full" style={{ width: '94.2%' }}></div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col justify-between">
+                <span className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#414d45] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-[#1b5e20]">account_balance_wallet</span>
+                  <span>Municipal Escrow Reserved</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-[32px] font-extrabold font-['Plus_Jakarta_Sans'] text-[#151d19]">₹54.5L</span>
+                  <span className="text-[12px] text-[#6f7e73]">smart contract backed</span>
+                </div>
+                <span className="text-[11px] text-[#6f7e73] mt-2">Disbursed on Homography proof</span>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col justify-between">
+                <span className="text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#414d45] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-[#ba1a1a]">gavel</span>
+                  <span>Section 12-B Penalties</span>
+                </span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-[32px] font-extrabold font-['Plus_Jakarta_Sans'] text-[#ba1a1a]">₹1,80,000</span>
+                  <span className="text-[12px] text-[#6f7e73]">clawed back</span>
+                </div>
+                <span className="text-[11px] text-[#ba1a1a] font-bold mt-2">Deducted from escrow balances</span>
+              </div>
+            </div>
+
+            {/* Top Performer Showcase: Rajesh Shinde */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-[#eef7ee] to-white border border-[#c3d9c5] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <img
+                    src="/rajesh_shinde.jpg"
+                    alt="Rajesh Shinde"
+                    onError={(e) => {
+                      e.target.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80";
+                    }}
+                    className="w-16 h-16 rounded-2xl object-cover ring-2 ring-[#1b5e20] shadow-sm"
+                  />
+                  <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md bg-[#1b5e20] text-white text-[9px] font-extrabold">
+                    #1 RANK
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[17px] text-[#151d19]">
+                      Rajesh Shinde • Apex Paving Ltd.
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-[#d7e8c3] text-[#1b5e20] text-[10px] font-bold">
+                      Tier 1 Verified
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-[#414d45] mt-0.5">
+                    Chief Civil Contractor for Ward 14 (Maplewood) • 142 Verified Road Repairs • 98.4% First-Pass Homography Accuracy
+                  </p>
+                  <div className="flex items-center gap-4 mt-2 text-[11px] font-bold text-[#6f7e73]">
+                    <span className="text-[#1b5e20] flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px]">verified</span>
+                      Zero Disputed Submissions in 90 Days
+                    </span>
+                    <span>•</span>
+                    <span>Avg Turnaround: 14.2 hrs (SLA: 24h)</span>
+                    <span>•</span>
+                    <span>Contact: +91 98334 10294</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => handleAuthorizePayout(contractorsList[0])}
+                  className="px-4 py-2.5 rounded-xl bg-[#1b5e20] hover:bg-[#256e2b] text-white text-[12px] font-['Plus_Jakarta_Sans'] font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px]">payments</span>
+                  <span>Authorize Escrow Payout</span>
+                </button>
+                <button
+                  onClick={() => setInspectContractor(contractorsList[0])}
+                  className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#f0f6f1] border border-[#c3d9c5] text-[#1b5e20] text-[12px] font-['Plus_Jakarta_Sans'] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">badge</span>
+                  <span>View Dossier</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Master Contractor Leaderboard Table */}
+            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[16px] text-[#151d19]">
+                    Contractor Performance & Escrow Registry
+                  </h3>
+                  <p className="text-[12px] text-[#6f7e73]">
+                    Rankings automatically recalculated from computer vision verification rates and GPS on-time compliance.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBatchModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-[#eef7ee] hover:bg-[#d7e8c3] text-[#1b5e20] font-['Plus_Jakarta_Sans'] text-[12px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                    <span>Assign Work Order Batch</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[12px]">
+                  <thead>
+                    <tr className="border-b border-[#e0ece2] text-[#6f7e73] font-['Plus_Jakarta_Sans'] text-[11px] font-bold uppercase tracking-wider">
+                      <th className="py-3 px-3">Contractor & Crew Lead</th>
+                      <th className="py-3 px-3">Tier Status</th>
+                      <th className="py-3 px-3 text-center">Repairs Done</th>
+                      <th className="py-3 px-3 text-center">First-Pass Match</th>
+                      <th className="py-3 px-3 text-center">SLA Compliance</th>
+                      <th className="py-3 px-3 text-right">Escrow Payout</th>
+                      <th className="py-3 px-3 text-right">Penalties</th>
+                      <th className="py-3 px-3 text-center">Standing</th>
+                      <th className="py-3 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0f4f0]">
+                    {contractorsList.map((c) => (
+                      <tr key={c.id} className="hover:bg-[#f8fbf8] transition-colors">
+                        <td className="py-3.5 px-3">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={c.avatar}
+                              alt={c.lead}
+                              onError={(e) => {
+                                e.target.src = "/rajesh_shinde.jpg";
+                              }}
+                              className="w-9 h-9 rounded-xl object-cover ring-1 ring-[#e0ece2]"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-['Plus_Jakarta_Sans'] font-bold text-[13px] text-[#151d19]">
+                                {c.name}
+                              </span>
+                              <span className="text-[11px] text-[#6f7e73]">
+                                {c.lead} • {c.ward}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <span className="px-2.5 py-0.5 rounded-full bg-[#f0f6f1] text-[#1b5e20] font-bold text-[10px]">
+                            {c.tier}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center font-bold text-[#151d19]">
+                          {c.completed}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className={`font-bold ${c.firstPassRate >= 90 ? 'text-[#1b5e20]' : 'text-[#ba1a1a]'}`}>
+                            {c.firstPassRate}%
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`font-bold ${c.slaRate >= 90 ? 'text-[#1b5e20]' : 'text-[#ba1a1a]'}`}>
+                              {c.slaRate}%
+                            </span>
+                            <div className="w-16 h-1.5 rounded-full bg-[#e0ece2] overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${c.slaRate >= 90 ? 'bg-[#1b5e20]' : 'bg-[#ba1a1a]'}`}
+                                style={{ width: `${c.slaRate}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-bold text-[#151d19]">
+                          {c.payoutTotal}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-bold text-[#ba1a1a]">
+                          {c.penalties}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            c.statusType === 'good'
+                              ? 'bg-[#d7e8c3] text-[#1b5e20]'
+                              : c.statusType === 'warning'
+                              ? 'bg-[#fff4cc] text-[#8a6500]'
+                              : 'bg-[#ffdad6] text-[#ba1a1a]'
+                          }`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleAuthorizePayout(c)}
+                              className="p-1.5 rounded-lg bg-[#eef7ee] hover:bg-[#d7e8c3] text-[#1b5e20] transition-colors"
+                              title="Authorize Payout"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">payments</span>
+                            </button>
+                            <button
+                              onClick={() => handleIssueWarning(c)}
+                              className="p-1.5 rounded-lg bg-[#fff0f0] hover:bg-[#ffdad6] text-[#ba1a1a] transition-colors"
+                              title="Issue SLA Warning & Penalty"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">warning</span>
+                            </button>
+                            <button
+                              onClick={() => setInspectContractor(c)}
+                              className="p-1.5 rounded-lg bg-[#f0f6f1] hover:bg-[#e0ece2] text-[#414d45] transition-colors"
+                              title="View Profile Dossier"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">visibility</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+        )}
+
+        {/* TAB 4: CONTRACTOR ID & BATCH DISPATCH */}
+        {activeTab === 'contractor-batches' && (
+          <main className="p-6 flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[22px] text-[#151d19]">
+                  Contractor Work Order Batches & Crew Badges
+                </h2>
+                <p className="text-[12px] text-[#6f7e73]">
+                  Geofenced work-order batches cryptographically assigned to contractor crews with SLA tracking.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowBatchModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-[#1b5e20] hover:bg-[#256e2b] text-white font-['Plus_Jakarta_Sans'] text-[13px] font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[18px]">add_task</span>
+                <span>Create & Dispatch Work Order Batch</span>
+              </button>
+            </div>
+
+            {/* Active Batches Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {contractorBatches.map((batch) => {
+                const percent = Math.round((batch.completed / batch.count) * 100);
+                const isOverdue = batch.status.includes('Overdue');
+                return (
+                  <div
+                    key={batch.id}
+                    className={`p-5 rounded-2xl bg-white border flex flex-col justify-between shadow-xs transition-all ${
+                      isOverdue ? 'border-[#ffdad6] ring-1 ring-[#ffdad6]' : 'border-[#e0ece2] hover:border-[#b6ccb9]'
+                    }`}
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[12px] font-bold text-[#1b5e20] bg-[#eef7ee] px-2.5 py-1 rounded-lg">
+                          {batch.id}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          batch.priority === 'CRITICAL'
+                            ? 'bg-[#ffdad6] text-[#ba1a1a]'
+                            : 'bg-[#eef7ee] text-[#1b5e20]'
+                        }`}>
+                          {batch.priority}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-['Plus_Jakarta_Sans'] font-bold text-[15px] text-[#151d19]">
+                          {batch.contractor}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#6f7e73] mt-0.5">
+                          <span className="material-symbols-outlined text-[14px]">pin_drop</span>
+                          <span>{batch.ward}</span>
+                          <span>•</span>
+                          <span>{batch.crew}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-[#6f7e73]">Batch Progress</span>
+                          <span className="font-bold text-[#151d19]">{batch.completed} of {batch.count} Patched ({percent}%)</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-[#e0ece2] overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${isOverdue ? 'bg-[#ba1a1a]' : 'bg-[#1b5e20]'}`}
+                            style={{ width: `${percent}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                        <div className="flex flex-col">
+                          <span className="text-[#6f7e73]">SLA Window</span>
+                          <span className={`font-bold ${isOverdue ? 'text-[#ba1a1a]' : 'text-[#1b5e20]'}`}>
+                            {batch.slaRemaining}
+                          </span>
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="text-[#6f7e73]">Escrow Budget</span>
+                          <span className="font-bold text-[#151d19]">{batch.budget}</span>
+                        </div>
+                      </div>
+
+                      {/* Digital Crew ID Badge Preview */}
+                      <div className="mt-2 p-2.5 rounded-xl bg-[#f4f8f4] border border-[#d2e7d3] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-[#b6ccb9] flex items-center justify-center text-[#1b5e20]">
+                            <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-['Plus_Jakarta_Sans'] font-bold text-[11px] text-[#151d19]">
+                              Crew Dispatch QR
+                            </span>
+                            <span className="text-[10px] text-[#6f7e73] font-mono truncate max-w-[120px]">
+                              {batch.hash}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-md bg-white border border-[#c3d9c5] text-[#1b5e20] text-[10px] font-bold">
+                          Geo-Locked
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-[#f0f4f0] flex items-center justify-between">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        batch.status === 'Ready for Sign-off'
+                          ? 'bg-[#d7e8c3] text-[#1b5e20]'
+                          : isOverdue
+                          ? 'bg-[#ffdad6] text-[#ba1a1a]'
+                          : 'bg-[#f0f6f1] text-[#414d45]'
+                      }`}>
+                        {batch.status}
+                      </span>
+
+                      <button
+                        onClick={() => {
+                          setActionNotice({
+                            type: 'approved',
+                            msg: `Digital Crew QR badge generated for ${batch.contractor} (${batch.id}). Ready for on-site scanning.`
+                          });
+                        }}
+                        className="text-[11px] font-['Plus_Jakarta_Sans'] font-bold text-[#1b5e20] hover:underline flex items-center gap-0.5"
+                      >
+                        <span>Print QR Pass</span>
+                        <span className="material-symbols-outlined text-[13px]">download</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </main>
+        )}
+
+        {/* TAB 5: AUDIT LEDGER (TAMPER-EVIDENT SHA-256) */}
+        {activeTab === 'audit-ledger' && (
+          <main className="p-6 flex flex-col gap-6 max-w-6xl">
+            {/* Cryptographic Integrity Banner */}
+            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#eef7ee] text-[#1b5e20] flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[24px]">verified_user</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[18px] text-[#151d19]">
+                      Tamper-Evident SHA-256 Cryptographic Audit Trail
+                    </h3>
+                    <p className="text-[12px] text-[#6f7e73]">
+                      Every citizen report, computer vision homography alignment, contractor proof, and inspector sign-off is sealed into immutable blocks.
+                    </p>
+                  </div>
+                </div>
+
                 <button
                   onClick={handleVerifyChain}
                   disabled={isVerifyingChain}
-                  className="px-4 py-2 rounded-xl bg-[#1b5e20] text-white text-[12px] font-['Plus_Jakarta_Sans'] font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                  className="px-4 py-2 rounded-xl bg-[#1b5e20] hover:bg-[#256e2b] text-white text-[12px] font-['Plus_Jakarta_Sans'] font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
                 >
                   <span className={`material-symbols-outlined text-[16px] ${isVerifyingChain ? 'animate-spin' : ''}`}>
-                    {isVerifyingChain ? 'sync' : 'verified_user'}
+                    {isVerifyingChain ? 'sync' : 'gavel'}
                   </span>
-                  <span>{isVerifyingChain ? 'Verifying Hashes...' : 'Re-verify Block Integrity'}</span>
+                  <span>{isVerifyingChain ? 'Verifying Block Hashes...' : 'Cryptographic Merkle Audit'}</span>
                 </button>
               </div>
 
               {chainVerified && (
-                <div className="p-3 rounded-xl bg-[#d7e8c3] text-[#1b5e20] font-bold text-[12px] flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                  <span>1,429 Blocks Cryptographically Validated. Zero Merkle discrepancies found.</span>
+                <div className="p-3.5 rounded-xl bg-[#d7e8c3] text-[#12230b] border border-[#a3f69c] font-bold text-[12px] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[20px] text-[#1b5e20]">verified</span>
+                    <span>Zero Discrepancies Found Across {1425 + auditBlocks.length} Blocks. Current Root: 0x9a8f4c28...e71c</span>
+                  </div>
+                  <span className="font-mono text-[11px] text-[#1b5e20]">Groth16 ZK-Proof OK</span>
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 mt-2">
-                {[
-                  { block: 1429, hash: "e7a4f9104c89a01f...9f01", event: "OFFICER_SIGN_OFF", actor: "Elena Rostova (ID-84)", time: "2 mins ago" },
-                  { block: 1428, hash: "3d18e9842fbc401e...b401", event: "AI_HOMOGRAPHY_MATCH", actor: "CV Engine v2.4", time: "14 mins ago" },
-                  { block: 1427, hash: "11e9a21bcf87c55e...7c55", event: "CONTRACTOR_PROOF_SUBMIT", actor: "Apex Paving (Crew #4)", time: "22 mins ago" },
-                  { block: 1426, hash: "9a21bcf87c55e318...8f7b", event: "CITIZEN_REPORT_SUBMIT", actor: "Maya S. (Citizen)", time: "2 days ago" }
-                ].map((b) => (
-                  <div key={b.block} className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex items-center justify-between text-[12px]">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-[#1b5e20]">Block #{b.block}</span>
-                      <span className="font-bold text-[#151d19]">{b.event}</span>
-                      <span className="text-[#6f7e73]">({b.actor})</span>
-                    </div>
-                    <div className="flex items-center gap-3 font-mono text-[11px] text-[#6f7e73]">
-                      <span className="bg-white px-2 py-0.5 rounded border border-[#e0ece2]">{b.hash}</span>
-                      <span>{b.time}</span>
-                    </div>
-                  </div>
+              {/* Filter Pills */}
+              <div className="flex items-center gap-2 pt-2 border-t border-[#f0f4f0] overflow-x-auto no-scrollbar">
+                <span className="text-[11px] font-['Plus_Jakarta_Sans'] font-bold text-[#6f7e73] mr-1">Event Type:</span>
+                {['all', 'OFFICER_SIGN_OFF', 'AI_HOMOGRAPHY_MATCH', 'CONTRACTOR_PROOF_SUBMIT', 'CITIZEN_REPORT_SUBMIT'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setAuditFilter(type)}
+                    className={`px-3 py-1 rounded-full text-[11px] font-['Plus_Jakarta_Sans'] font-bold whitespace-nowrap transition-all ${
+                      auditFilter === type
+                        ? 'bg-[#1b5e20] text-white'
+                        : 'bg-[#f0f6f1] text-[#414d45] hover:bg-[#e0ece2]'
+                    }`}
+                  >
+                    {type === 'all' ? 'All Events' : type.replace(/_/g, ' ')}
+                  </button>
                 ))}
               </div>
             </div>
+
+            {/* Audit Blocks Timeline List */}
+            <div className="flex flex-col gap-3">
+              {auditBlocks
+                .filter((b) => auditFilter === 'all' || b.event === auditFilter)
+                .map((b) => (
+                  <div
+                    key={b.block}
+                    onClick={() => setSelectedAuditBlock(b)}
+                    className="p-4 rounded-2xl bg-white border border-[#e0ece2] hover:border-[#1b5e20] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#f0f6f1] text-[#1b5e20] font-mono font-bold text-[12px] flex items-center justify-center shrink-0 group-hover:bg-[#1b5e20] group-hover:text-white transition-colors">
+                        #{b.block}
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-['Plus_Jakarta_Sans'] font-bold text-[13px] text-[#151d19]">
+                            {b.event}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-[#eef7ee] text-[#1b5e20] text-[10px] font-extrabold">
+                            {b.docket}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-[#d7e8c3] text-[#1b5e20] text-[10px] font-bold">
+                            {b.zkp}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-[#6f7e73] mt-0.5">
+                          Actor: <strong className="text-[#151d19]">{b.actor}</strong> • Timestamp: {b.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 font-mono text-[11px] text-[#6f7e73] shrink-0">
+                      <span className="bg-[#f8fbf8] px-2.5 py-1 rounded-lg border border-[#e0ece2] text-[#1b5e20] font-bold">
+                        {b.hash.substring(0, 14)}...
+                      </span>
+                      <span className="material-symbols-outlined text-[16px] text-[#7a887d] group-hover:text-[#1b5e20] group-hover:translate-x-0.5 transition-all">
+                        arrow_forward_ios
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </main>
+        )}
+
+        {/* TAB 6: SETTINGS & SYSTEM CONFIGURATION */}
+        {activeTab === 'settings' && (
+          <main className="p-6 flex flex-col gap-6 max-w-4xl">
+            <div>
+              <h2 className="font-['Plus_Jakarta_Sans'] font-extrabold text-[22px] text-[#151d19]">
+                Municipal Verification System Settings
+              </h2>
+              <p className="text-[12px] text-[#6f7e73]">
+                Tune computer vision tolerance, SLA breach penalties, zero-knowledge proofs, and automated payout parameters.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-5">
+              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[15px] text-[#151d19] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#1b5e20]">tune</span>
+                <span>Computer Vision & Alignment Thresholds</span>
+              </h3>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <div className="flex items-center justify-between text-[12px] font-bold mb-1">
+                    <span className="text-[#151d19]">Minimum Homography Match Confidence</span>
+                    <span className="text-[#1b5e20]">{settingsState.aiThreshold}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="80"
+                    max="99"
+                    value={settingsState.aiThreshold}
+                    onChange={(e) => setSettingsState({ ...settingsState, aiThreshold: parseInt(e.target.value) })}
+                    className="w-full accent-[#1b5e20]"
+                  />
+                  <span className="text-[11px] text-[#6f7e73]">
+                    Submissions scoring below this threshold are automatically redirected to manual officer triage.
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between text-[12px] font-bold mb-1">
+                    <span className="text-[#151d19]">Required Static SIFT / ORB Keypoints</span>
+                    <span className="text-[#1b5e20]">{settingsState.minKeypoints} Fixed Anchors</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2"
+                    max="6"
+                    value={settingsState.minKeypoints}
+                    onChange={(e) => setSettingsState({ ...settingsState, minKeypoints: parseInt(e.target.value) })}
+                    className="w-full accent-[#1b5e20]"
+                  />
+                  <span className="text-[11px] text-[#6f7e73]">
+                    Number of background landmark anchors (manholes, curbs, paint markings) required for perspective correction.
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between text-[12px] font-bold mb-1">
+                    <span className="text-[#151d19]">GPS Geofence Max Radius</span>
+                    <span className="text-[#1b5e20]">{settingsState.geofenceRadius} meters</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    value={settingsState.geofenceRadius}
+                    onChange={(e) => setSettingsState({ ...settingsState, geofenceRadius: parseInt(e.target.value) })}
+                    className="w-full accent-[#1b5e20]"
+                  />
+                  <span className="text-[11px] text-[#6f7e73]">
+                    Permissible distance between original citizen report coordinates and contractor repair photo GPS.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-5">
+              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[15px] text-[#151d19] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#1b5e20]">timer</span>
+                <span>SLA Windows & Section 12-B Penalties</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] font-bold text-[#151d19]">Emergency Hazard SLA (Hours)</label>
+                  <input
+                    type="number"
+                    value={settingsState.emergencySla}
+                    onChange={(e) => setSettingsState({ ...settingsState, emergencySla: parseInt(e.target.value) || 6 })}
+                    className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-[#6f7e73]">Default 6 hours for severe arterial craters.</span>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] font-bold text-[#151d19]">Standard Pothole SLA (Hours)</label>
+                  <input
+                    type="number"
+                    value={settingsState.standardSla}
+                    onChange={(e) => setSettingsState({ ...settingsState, standardSla: parseInt(e.target.value) || 24 })}
+                    className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                  />
+                  <span className="text-[10px] text-[#6f7e73]">Default 24 hours for standard urban roads.</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 pt-2 border-t border-[#f0f4f0]">
+                <label className="text-[12px] font-bold text-[#151d19]">Section 12-B SLA Breach Penalty (₹)</label>
+                <input
+                  type="number"
+                  value={settingsState.penaltyAmount}
+                  onChange={(e) => setSettingsState({ ...settingsState, penaltyAmount: parseInt(e.target.value) || 15000 })}
+                  className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#ba1a1a] focus:outline-none"
+                />
+                <span className="text-[10px] text-[#6f7e73]">
+                  Clawed back automatically from the contractor's locked escrow account upon overdue expiration.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-[#e0ece2] shadow-xs flex flex-col gap-4">
+              <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[15px] text-[#151d19] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#1b5e20]">security</span>
+                <span>Security & Privacy Controls</span>
+              </h3>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2]">
+                <div className="flex flex-col">
+                  <span className="font-['Plus_Jakarta_Sans'] font-bold text-[13px] text-[#151d19]">
+                    Auto-Seal SHA-256 Merkle Block on Officer Approval
+                  </span>
+                  <span className="text-[11px] text-[#6f7e73]">
+                    Instantly appends verified sign-offs into the tamper-evident municipal audit ledger.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settingsState.autoSealMerkle}
+                  onChange={(e) => setSettingsState({ ...settingsState, autoSealMerkle: e.target.checked })}
+                  className="w-5 h-5 accent-[#1b5e20] cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2]">
+                <div className="flex flex-col">
+                  <span className="font-['Plus_Jakarta_Sans'] font-bold text-[13px] text-[#151d19]">
+                    Automated Face & License Plate Blurring
+                  </span>
+                  <span className="text-[11px] text-[#6f7e73]">
+                    Mask citizen faces and vehicle registration plates in evidence captures before storing.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settingsState.privacyMasking}
+                  onChange={(e) => setSettingsState({ ...settingsState, privacyMasking: e.target.checked })}
+                  className="w-5 h-5 accent-[#1b5e20] cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setActionNotice({
+                    type: 'approved',
+                    msg: 'Municipal Settings Saved Successfully. All thresholds and SLA configurations synchronized across wards.'
+                  });
+                }}
+                className="px-6 py-3 rounded-full bg-[#1b5e20] hover:bg-[#256e2b] text-white font-['Plus_Jakarta_Sans'] text-[13px] font-bold shadow-md transition-all cursor-pointer active:scale-95 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">save</span>
+                <span>Save System Configuration</span>
+              </button>
+            </div>
+          </main>
+        )}
+
+        {/* MODAL 1: CREATE WORK ORDER BATCH / CONTRACTOR ID */}
+        {showBatchModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 border border-[#e0ece2] animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center justify-between border-b border-[#f0f4f0] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#eef7ee] text-[#1b5e20] flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[20px]">add_task</span>
+                  </div>
+                  <div>
+                    <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[16px] text-[#151d19]">
+                      Create Work Order Batch & Dispatch Crew
+                    </h3>
+                    <p className="text-[11px] text-[#6f7e73]">Issue geofenced dispatch ID & digital badge</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBatchModal(false)}
+                  className="w-8 h-8 rounded-full hover:bg-[#f0f6f1] text-[#7a887d] flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateBatchSubmit} className="flex flex-col gap-3.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] font-bold text-[#151d19]">Target Municipal Ward</label>
+                  <select
+                    value={batchForm.ward}
+                    onChange={(e) => setBatchForm({ ...batchForm, ward: e.target.value })}
+                    className="px-3 py-2 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                  >
+                    <option>Ward 14 • Maplewood</option>
+                    <option>Ward K/W • Andheri West</option>
+                    <option>Ward A • Colaba</option>
+                    <option>Ward G/N • Dadar</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] font-bold text-[#151d19]">Authorized Contractor</label>
+                  <select
+                    value={batchForm.contractor}
+                    onChange={(e) => setBatchForm({ ...batchForm, contractor: e.target.value })}
+                    className="px-3 py-2 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                  >
+                    <option>Apex Paving Ltd. (Rajesh Shinde) - Tier 1</option>
+                    <option>Heritage Paving Infra (Amit Patil) - Tier 1</option>
+                    <option>Metro Asphalt Works (Vikram Deshmukh) - Tier 2</option>
+                    <option>Mumbai Infra Roads (Sunil Jadhav) - Tier 3</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] font-bold text-[#151d19]">Pothole Defect Count</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={batchForm.count}
+                      onChange={(e) => setBatchForm({ ...batchForm, count: e.target.value })}
+                      className="px-3 py-2 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[12px] font-bold text-[#151d19]">Priority Window</label>
+                    <select
+                      value={batchForm.priority}
+                      onChange={(e) => setBatchForm({ ...batchForm, priority: e.target.value })}
+                      className="px-3 py-2 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                    >
+                      <option value="CRITICAL">CRITICAL (6h Emergency)</option>
+                      <option value="HIGH">HIGH (12h Arterial)</option>
+                      <option value="STANDARD">STANDARD (24h Window)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] font-bold text-[#151d19]">Escrow Budget Allocation</label>
+                  <input
+                    type="text"
+                    value={batchForm.budget}
+                    onChange={(e) => setBatchForm({ ...batchForm, budget: e.target.value })}
+                    className="px-3 py-2 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] text-[13px] font-bold text-[#151d19] focus:outline-none"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#eef7ee] border border-[#d2e7d3] flex items-center gap-2 text-[11px] text-[#1b5e20] font-bold">
+                  <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                  <span>A cryptographic Merkle QR pass will be issued immediately to the contractor crew app.</span>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f0f4f0]">
+                  <button
+                    type="button"
+                    onClick={() => setShowBatchModal(false)}
+                    className="px-4 py-2 rounded-xl text-[12px] font-['Plus_Jakarta_Sans'] font-bold text-[#6f7e73] hover:bg-[#f0f6f1]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-[#1b5e20] hover:bg-[#256e2b] text-white text-[13px] font-['Plus_Jakarta_Sans'] font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    Dispatch Batch & Issue Badge
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 2: CRYPTOGRAPHIC BLOCK INSPECTOR */}
+        {selectedAuditBlock && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 border border-[#e0ece2]">
+              <div className="flex items-center justify-between border-b border-[#f0f4f0] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#eef7ee] text-[#1b5e20] flex items-center justify-center font-mono font-bold">
+                    #{selectedAuditBlock.block}
+                  </div>
+                  <div>
+                    <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[16px] text-[#151d19]">
+                      Audit Block #{selectedAuditBlock.block} Inspection
+                    </h3>
+                    <span className="text-[11px] text-[#6f7e73] font-mono">Immutable Cryptographic Record</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedAuditBlock(null)}
+                  className="w-8 h-8 rounded-full hover:bg-[#f0f6f1] text-[#7a887d] flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2.5 text-[12px]">
+                <div className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex flex-col gap-1">
+                  <span className="text-[10px] text-[#6f7e73] font-bold uppercase">SHA-256 Block Hash</span>
+                  <span className="font-mono text-[11px] text-[#1b5e20] break-all font-bold">
+                    {selectedAuditBlock.hash}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex flex-col">
+                    <span className="text-[10px] text-[#6f7e73] font-bold uppercase">Event Type</span>
+                    <span className="font-bold text-[#151d19]">{selectedAuditBlock.event}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex flex-col">
+                    <span className="text-[10px] text-[#6f7e73] font-bold uppercase">Docket Ref</span>
+                    <span className="font-bold text-[#1b5e20]">{selectedAuditBlock.docket}</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#f8fbf8] border border-[#e0ece2] flex flex-col">
+                  <span className="text-[10px] text-[#6f7e73] font-bold uppercase">Signing Entity & Public Key</span>
+                  <span className="font-bold text-[#151d19]">{selectedAuditBlock.actor}</span>
+                  <span className="font-mono text-[10px] text-[#7a887d]">secp256k1: 0x4f89...b192 verified</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#d7e8c3] border border-[#a3f69c] flex items-center justify-between text-[11px] text-[#12230b] font-bold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-[#1b5e20]">lock</span>
+                    <span>Zero-Knowledge Verification:</span>
+                  </div>
+                  <span className="font-mono">{selectedAuditBlock.zkp}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-2 border-t border-[#f0f4f0]">
+                <button
+                  onClick={() => setSelectedAuditBlock(null)}
+                  className="px-5 py-2 rounded-xl bg-[#1b5e20] text-white text-[12px] font-['Plus_Jakarta_Sans'] font-bold cursor-pointer"
+                >
+                  Close Inspector
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 3: CONTRACTOR DOSSIER */}
+        {inspectContractor && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 border border-[#e0ece2]">
+              <div className="flex items-center justify-between border-b border-[#f0f4f0] pb-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={inspectContractor.avatar}
+                    alt={inspectContractor.lead}
+                    onError={(e) => {
+                      e.target.src = "/rajesh_shinde.jpg";
+                    }}
+                    className="w-12 h-12 rounded-2xl object-cover ring-2 ring-[#1b5e20]"
+                  />
+                  <div>
+                    <h3 className="font-['Plus_Jakarta_Sans'] font-bold text-[16px] text-[#151d19]">
+                      {inspectContractor.name}
+                    </h3>
+                    <p className="text-[12px] text-[#6f7e73]">
+                      Lead: {inspectContractor.lead} • {inspectContractor.tier}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setInspectContractor(null)}
+                  className="w-8 h-8 rounded-full hover:bg-[#f0f6f1] text-[#7a887d] flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5 text-center text-[11px]">
+                <div className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2]">
+                  <span className="text-[#6f7e73] block">Repairs Completed</span>
+                  <span className="font-bold text-[14px] text-[#151d19]">{inspectContractor.completed}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2]">
+                  <span className="text-[#6f7e73] block">Homography Rate</span>
+                  <span className="font-bold text-[14px] text-[#1b5e20]">{inspectContractor.firstPassRate}%</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[#f8fbf8] border border-[#e0ece2]">
+                  <span className="text-[#6f7e73] block">Rating</span>
+                  <span className="font-bold text-[14px] text-[#151d19]">{inspectContractor.rating}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 text-[12px]">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fbf8]">
+                  <span className="text-[#6f7e73]">Assigned Municipal Ward</span>
+                  <span className="font-bold text-[#151d19]">{inspectContractor.ward}</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fbf8]">
+                  <span className="text-[#6f7e73]">Total Escrow Disbursed</span>
+                  <span className="font-bold text-[#1b5e20]">{inspectContractor.payoutTotal}</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fbf8]">
+                  <span className="text-[#6f7e73]">Section 12-B Penalties</span>
+                  <span className="font-bold text-[#ba1a1a]">{inspectContractor.penalties}</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#f8fbf8]">
+                  <span className="text-[#6f7e73]">Official Contact Phone</span>
+                  <span className="font-mono text-[#151d19]">{inspectContractor.phone}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f0f4f0]">
+                <button
+                  onClick={() => setInspectContractor(null)}
+                  className="px-5 py-2 rounded-xl bg-[#1b5e20] text-white text-[12px] font-['Plus_Jakarta_Sans'] font-bold cursor-pointer"
+                >
+                  Close Dossier
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

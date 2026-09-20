@@ -5,7 +5,7 @@ export const MOCK_USERS = {
     role: "citizen",
     avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB-Xf-jQv8SiZkiLLaEAGtPtpd7U8fd7dQK8l_6WUM3hVb6OokBxRCuKSJN6eiNZpt4bfdoDSiLZgry_N77l_iawuoujXYQSs44tkEvZFEEKMOcuvbEmDz3N9iayE4B5Blektpd5RZ1sW_ZVOx0ozztljQ8ST0-_w25r5g3ldFxCRUy0ycO7aAP1xsFMLBjc-STnMy6oxWQsc9mVllsHTZ6r1fOc_sook8EZtgW6P8ztTyf4GIR_13vDA",
     ward: "Ward 14 • Maplewood",
-    badge: "Neighborhood Steward ★",
+    badge: "Neighborhood Steward ",
     phone: "+91 98201 54829"
   },
   contractor: {
@@ -14,9 +14,9 @@ export const MOCK_USERS = {
     company: "Apex Paving Ltd.",
     crew: "Crew #4",
     role: "contractor",
-    avatar: "https://images.unsplash.com/photo-1541888946425-d0fbb186156a?w=400&auto=format&fit=crop&q=80",
+    avatar: "/rajesh_shinde.jpg",
     ward: "Ward 14 / Ward K-West",
-    rating: "4.9 ★",
+    rating: "4.9 ",
     verifiedRate: "96.8%",
     phone: "+91 98334 10294"
   },
@@ -66,7 +66,7 @@ export const MOCK_FEED_ITEMS = [
   {
     id: "CF-8429",
     type: "verified",
-    badge: "Fix Verified 🎉",
+    badge: "Fix Verified ",
     timeAgo: "2 hours ago",
     title: "Deep Asphalt Pothole",
     address: "342 Elm Street",
@@ -81,7 +81,7 @@ export const MOCK_FEED_ITEMS = [
   {
     id: "CF-8432",
     type: "dispatched",
-    badge: "Crew Dispatched 🚜",
+    badge: "Crew Dispatched ",
     badgeColor: "amber",
     timeAgo: "45 mins ago",
     expectedFix: "Expected fix by 4 PM",
@@ -96,7 +96,7 @@ export const MOCK_FEED_ITEMS = [
   {
     id: "CF-8435",
     type: "under_verification",
-    badge: "Under Verification 🔍",
+    badge: "Under Verification ",
     badgeColor: "sky",
     timeAgo: "35 mins ago",
     title: "Sunken Manhole Cover",

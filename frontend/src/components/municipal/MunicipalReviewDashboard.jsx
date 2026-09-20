@@ -60,7 +60,7 @@ export default function MunicipalReviewDashboard({ onLogout, lang, setLang, t })
   const handleApprove = () => {
     setDecisionFeedback({
       type: 'approved',
-      title: 'Work Order Approved & Escrow Released! ✓',
+      title: 'Work Order Approved & Escrow Released! ',
       msg: `Pothole repair at ${selectedItem.address} has been signed off. ${selectedItem.payout} released to ${selectedItem.contractor}. Tamper-evident ledger Block #422 generated.`
     });
   };
@@ -68,7 +68,7 @@ export default function MunicipalReviewDashboard({ onLogout, lang, setLang, t })
   const handleReject = () => {
     setDecisionFeedback({
       type: 'rejected',
-      title: 'Work Order Rejected & Fine Issued! ⚠️',
+      title: 'Work Order Rejected & Fine Issued! ',
       msg: `Repair at ${selectedItem.address} rejected. Discrepancy logged on municipal ledger. Contractor must retake alignment within 12 hours.`
     });
   };

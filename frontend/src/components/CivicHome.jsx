@@ -40,7 +40,7 @@ export default function CivicHome({
           <h1 className="font-['Plus_Jakarta_Sans'] text-[22px] font-semibold text-[#151d19]">
             {t.goodMorning}
           </h1>
-          <span className="text-xl animate-bounce">👋</span>
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0d631b] animate-ping"></span>
         </div>
         <p className="font-['Inter'] text-[15px] text-[#40493d]">
           {t.greetingSub}
@@ -100,7 +100,10 @@ export default function CivicHome({
 
       {/* 3 Status Metric Cards */}
       <section className="grid grid-cols-3 gap-2.5">
-        <div className="flex flex-col p-3 rounded-2xl bg-[#ecf6ee] text-[#151d19] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#dbe5dd]/50">
+        <div 
+          onClick={() => setActiveScreen('my-reports')}
+          className="flex flex-col p-3 rounded-2xl bg-[#ecf6ee] text-[#151d19] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#dbe5dd]/50 cursor-pointer active:scale-95 transition-transform"
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="material-symbols-outlined text-[#0d631b] text-[20px]">person_pin_circle</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#0d631b]"></span>
@@ -111,7 +114,10 @@ export default function CivicHome({
           </span>
         </div>
 
-        <div className="flex flex-col p-3 rounded-2xl bg-[#e1ebe3] text-[#151d19] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#dbe5dd]/50">
+        <div 
+          onClick={() => setActiveScreen('my-reports')}
+          className="flex flex-col p-3 rounded-2xl bg-[#e1ebe3] text-[#151d19] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#dbe5dd]/50 cursor-pointer active:scale-95 transition-transform"
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="material-symbols-outlined text-[#465860] text-[20px]">pending_actions</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#465860]"></span>
@@ -122,7 +128,10 @@ export default function CivicHome({
           </span>
         </div>
 
-        <div className="flex flex-col p-3 rounded-2xl bg-[#d7e8c3] text-[#121f08] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#bfcaba]/50">
+        <div 
+          onClick={() => setActiveScreen('activity')}
+          className="flex flex-col p-3 rounded-2xl bg-[#d7e8c3] text-[#121f08] shadow-[0_2px_8px_rgba(46,125,50,0.04)] border border-[#bfcaba]/50 cursor-pointer active:scale-95 transition-transform"
+        >
           <div className="flex items-center justify-between mb-1">
             <span className="material-symbols-outlined text-[#0d631b] text-[20px]">task_alt</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#0d631b]"></span>
@@ -234,7 +243,7 @@ export default function CivicHome({
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">thumb_up</span>
-              <span>{helpfulGiven[feedItems[0].id] ? 'Confirmed ✓' : t.helpful}</span>
+              <span>{helpfulGiven[feedItems[0].id] ? 'Confirmed ' : t.helpful}</span>
             </button>
           </div>
         </article>
@@ -333,7 +342,7 @@ export default function CivicHome({
               type="button"
             >
               <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              <span>{sawTooGiven[feedItems[2].id] ? 'Confirmed ✓' : t.sawThisToo}</span>
+              <span>{sawTooGiven[feedItems[2].id] ? 'Confirmed ' : t.sawThisToo}</span>
             </button>
             <button
               onClick={() => {

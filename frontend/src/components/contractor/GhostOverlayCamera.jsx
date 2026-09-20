@@ -58,53 +58,53 @@ export default function GhostOverlayCamera({
       if (scenario === 'genuine') {
         setVerdictResult({
           status: 'pass',
-          title: 'Auto-Verification Passed! 🎉',
+          title: 'Auto-Verification Passed! ',
           score: '98.4%',
           color: 'emerald',
           reason: 'All checks passed. Background kerb and lamp-post match citizen complaint. Depth fill confirmed 100%. Payout of ₹12,000 queued into escrow.',
           details: [
-            { name: 'GPS Haversine', res: '1.8m (Within 15m radius) ✓' },
-            { name: 'Camera Angle Homography', res: 'Δ 3.4° (Within 25° tolerance) ✓' },
-            { name: 'Background Landmark SIFT', res: '94% Keypoint Invariance ✓' },
-            { name: 'Road Bitumen Patch', res: 'YOLOv8 Fresh Asphalt Confirmed ✓' }
+            { name: 'GPS Haversine', res: '1.8m (Within 15m radius) ' },
+            { name: 'Camera Angle Homography', res: 'Δ 3.4° (Within 25° tolerance) ' },
+            { name: 'Background Landmark SIFT', res: '94% Keypoint Invariance ' },
+            { name: 'Road Bitumen Patch', res: 'YOLOv8 Fresh Asphalt Confirmed ' }
           ]
         });
       } else if (scenario === 'different_pothole') {
         setVerdictResult({
           status: 'reject',
-          title: 'Verification Rejected: Location Mismatch ❌',
+          title: 'Verification Rejected: Location Mismatch ',
           score: '22.1%',
           color: 'red',
           reason: 'Anti-Gaming Detection Triggered: Camera location is 182.4 meters away from reported complaint #CF-8429. Background landmarks do not match original scene.',
           details: [
-            { name: 'GPS Haversine', res: '182.4m (Exceeds 15m threshold) ❌' },
-            { name: 'Landmark ORB/SIFT', res: '18% Match (Failed homography) ❌' },
-            { name: 'Integrity Check', res: 'Different road detected ❌' }
+            { name: 'GPS Haversine', res: '182.4m (Exceeds 15m threshold) ' },
+            { name: 'Landmark ORB/SIFT', res: '18% Match (Failed homography) ' },
+            { name: 'Integrity Check', res: 'Different road detected ' }
           ]
         });
       } else if (scenario === 'wrong_angle') {
         setVerdictResult({
           status: 'review',
-          title: 'Officer Review Required: Angle Skew ⚠️',
+          title: 'Officer Review Required: Angle Skew ',
           score: '64.5%',
           color: 'amber',
           reason: 'Heading differs by 58° from citizen submission. Perspective homography could not reliably verify background kerb edge. Flagged for Municipal Engineer sign-off.',
           details: [
-            { name: 'GPS Haversine', res: '4.2m (In Range) ✓' },
-            { name: 'Camera Heading', res: 'Δ 58° (Exceeds 25° tolerance) ⚠️' },
-            { name: 'Landmark Features', res: '44% (Perspective Occluded) ⚠️' }
+            { name: 'GPS Haversine', res: '4.2m (In Range) ' },
+            { name: 'Camera Heading', res: 'Δ 58° (Exceeds 25° tolerance) ' },
+            { name: 'Landmark Features', res: '44% (Perspective Occluded) ' }
           ]
         });
       } else if (scenario === 'photo_reuse') {
         setVerdictResult({
           status: 'reject',
-          title: 'Fraud Alert: Perceptual Hash Collision 🚨',
+          title: 'Fraud Alert: Perceptual Hash Collision ',
           score: '0.0%',
           color: 'red',
           reason: 'Duplicate Photo Detected: Perceptual hash (pHash distance = 0) matches an existing repair submitted 12 days ago in Ward G/N. Reused proof flagged on municipal ledger.',
           details: [
-            { name: 'Integrity Check', res: 'Identical bitstream hash collision 🚨' },
-            { name: 'Fraud Flag', res: 'Logged on SHA-256 Ledger Block #419 🚨' }
+            { name: 'Integrity Check', res: 'Identical bitstream hash collision ' },
+            { name: 'Fraud Flag', res: 'Logged on SHA-256 Ledger Block #419 ' }
           ]
         });
       }

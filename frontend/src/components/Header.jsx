@@ -42,7 +42,7 @@ export default function Header({
                 {t.appTitle}
               </span>
               <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold text-[#40493d] truncate">
-                {isHome ? t.home : activeScreen === 'report' ? t.reportHazard : t.incidentDetails}
+                {isHome ? t.home : activeScreen === 'report' ? t.reportHazard : activeScreen === 'activity' ? t.activity : activeScreen === 'my-reports' ? t.myReports : activeScreen === 'community-map' ? t.liveMap : t.incidentDetails}
               </span>
             </div>
           </div>

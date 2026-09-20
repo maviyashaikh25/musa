@@ -6,6 +6,7 @@ import ReportCamera from './components/ReportCamera';
 import ComplaintDetail from './components/ComplaintDetail';
 import MyReports from './components/MyReports';
 import CommunityMap from './components/CommunityMap';
+import CivicActivity from './components/CivicActivity';
 import LoginPage from './components/LoginPage';
 
 // Contractor components
@@ -68,7 +69,7 @@ function MobileAppShell({ children, activeRole, onSwitchRole }) {
                 : 'text-[#7da787] hover:text-white'
             }`}
           >
-            <span>🧑</span>
+            <span className="material-symbols-outlined text-[18px]">person</span>
             <span>Citizen App</span>
           </button>
 
@@ -81,7 +82,7 @@ function MobileAppShell({ children, activeRole, onSwitchRole }) {
                 : 'text-[#7da787] hover:text-white'
             }`}
           >
-            <span>👷</span>
+            <span className="material-symbols-outlined text-[18px]">engineering</span>
             <span>Contractor App</span>
           </button>
         </div>
@@ -262,6 +263,14 @@ export default function App() {
                 userReports={userReports}
                 setActiveScreen={setActiveScreen}
                 setSelectedIncident={setSelectedIncident}
+                t={t}
+              />
+            )}
+            {activeScreen === 'activity' && (
+              <CivicActivity
+                setActiveScreen={setActiveScreen}
+                setSelectedIncident={setSelectedIncident}
+                selectedWard={selectedWard}
                 t={t}
               />
             )}

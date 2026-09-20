@@ -9,6 +9,7 @@ export default function ComplaintDetail({
   const [sliderPos, setSliderPos] = useState(50); // percentage (0 - 100)
   const [isDragging, setIsDragging] = useState(false);
   const [citizenVote, setCitizenVote] = useState(null); // 'yes' | 'no' | null
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const sliderRef = useRef(null);
 
   const handleSliderMove = (clientX) => {
@@ -16,8 +17,8 @@ export default function ComplaintDetail({
     const rect = sliderRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     let percentage = (x / rect.width) * 100;
-    if (percentage < 5) percentage = 5;
-    if (percentage > 95) percentage = 95;
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
     setSliderPos(percentage);
   };
 
@@ -55,6 +56,19 @@ export default function ComplaintDetail({
 
   return (
     <div className="flex flex-col w-full pb-28 gap-4 pt-1">
+      {/* Top Back Navigation */}
+      <div className="flex items-center justify-between px-1">
+        <button
+          onClick={() => setActiveScreen('home')}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white text-[#0d631b] font-['Plus_Jakarta_Sans'] text-[13px] font-bold shadow-sm border border-[#d7e8c3] hover:bg-[#ecf6ee] active:scale-95 transition-all"
+          type="button"
+        >
+          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          <span>Back to Feed</span>
+        </button>
+        <span className="text-xs font-bold text-[#546346]">Incident Audit Dossier</span>
+      </div>
+
       {/* Header Meta & Status Card */}
       <div className="bg-white p-4 rounded-3xl shadow-sm border border-[#d7e8c3]/60 flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
@@ -147,6 +161,43 @@ export default function ComplaintDetail({
               <span className="material-symbols-outlined text-[20px]">drag_indicator</span>
             </div>
           </div>
+        </div>
+
+        {/* Preset quick buttons */}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setSliderPos(100)}
+            className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all ${
+              sliderPos === 100
+                ? 'bg-[#2e7d32] text-white shadow-sm'
+                : 'bg-[#ecf6ee] text-[#40493d] hover:bg-[#d7e8c3]'
+            }`}
+          >
+            100% Before
+          </button>
+          <button
+            type="button"
+            onClick={() => setSliderPos(50)}
+            className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all ${
+              sliderPos === 50
+                ? 'bg-[#2e7d32] text-white shadow-sm'
+                : 'bg-[#ecf6ee] text-[#40493d] hover:bg-[#d7e8c3]'
+            }`}
+          >
+            50/50 Split
+          </button>
+          <button
+            type="button"
+            onClick={() => setSliderPos(0)}
+            className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all ${
+              sliderPos === 0
+                ? 'bg-[#2e7d32] text-white shadow-sm'
+                : 'bg-[#ecf6ee] text-[#40493d] hover:bg-[#d7e8c3]'
+            }`}
+          >
+            100% After
+          </button>
         </div>
 
         <p className="text-center font-['Plus_Jakarta_Sans'] text-[12px] font-semibold text-[#40493d] flex items-center justify-center gap-1">
@@ -297,15 +348,61 @@ export default function ComplaintDetail({
           <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold text-[#546346] uppercase">
             {t.ledgerSeal}
           </span>
-          <span className="font-mono text-[12px] text-[#0d631b] font-bold">
-            {incident.ledgerHash || "#e7a4...9f01"} (Verified)
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[12px] text-[#0d631b] font-bold">
+              {incident.ledgerHash || "#e7a4...9f01"} (Verified)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowBlockModal(true)}
+              className="text-[11px] font-bold text-[#0d631b] bg-[#ecf6ee] hover:bg-[#d7e8c3] px-2 py-0.5 rounded-md border border-[#d7e8c3]"
+            >
+              Inspect Block
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-1.5 pt-1 text-[#546346] border-t border-[#ecf6ee] text-[12px]">
           <span className="material-symbols-outlined text-[15px] text-[#0d631b]">lock</span>
           <span>{t.immutableAudit}</span>
         </div>
       </div>
+
+      {/* Block Inspection Modal */}
+      {showBlockModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-[#d7e8c3] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-[#0d631b]">
+                <span className="material-symbols-outlined">token</span>
+                <h4 className="font-bold text-base text-[#151d19]">Cryptographic Merkle Block</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBlockModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            
+            <div className="space-y-2 text-xs font-mono bg-slate-50 p-3 rounded-2xl border border-slate-200 text-slate-700">
+              <div><span className="text-slate-400">Block Height:</span> #1,842,903</div>
+              <div><span className="text-slate-400">Ledger Root:</span> 0x9f83a21...8b40</div>
+              <div><span className="text-slate-400">Sensor Proof:</span> GPS ±1.2m, HDG 284°</div>
+              <div><span className="text-slate-400">Timestamp:</span> {new Date().toISOString()}</div>
+              <div><span className="text-slate-400">State:</span> Consensus Finalized </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowBlockModal(false)}
+              className="mt-5 w-full py-3 rounded-2xl bg-[#0d631b] text-white font-bold text-sm hover:bg-[#2e7d32] transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

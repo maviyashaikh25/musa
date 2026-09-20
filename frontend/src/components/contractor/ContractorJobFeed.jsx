@@ -12,6 +12,7 @@ export default function ContractorJobFeed({
   const [jobs, setJobs] = useState(MOCK_CONTRACTOR_JOBS);
   const [filter, setFilter] = useState('all'); // 'all' | 'critical' | 'standard'
   const [countdown, setCountdown] = useState(6480); // seconds for urgent job
+  const [selectedBlueprint, setSelectedBlueprint] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -132,7 +133,7 @@ export default function ContractorJobFeed({
               {t.urgentSlaWarning}
             </span>
             <span className="font-mono text-[13px] text-white/90">
-              ⏱️ {formatCountdown(countdown)} to avoid 15% penalty
+              <span className="material-symbols-outlined text-[15px] inline mr-1">timer</span> {formatCountdown(countdown)} to avoid 15% penalty
             </span>
           </div>
         </div>
@@ -217,10 +218,14 @@ export default function ContractorJobFeed({
 
             {/* Action button */}
             <div className="flex items-center justify-between pt-1 border-t border-[#f2fcf4]">
-              <span className="font-['Plus_Jakarta_Sans'] text-[11px] font-bold text-[#40493d] flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-amber-600">timer</span>
-                <span>{job.slaLabel}</span>
-              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedBlueprint(job)}
+                className="text-[11px] font-bold text-[#0d631b] hover:underline flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[14px]">architecture</span>
+                <span>Blueprint Specs</span>
+              </button>
 
               <button
                 type="button"
@@ -234,6 +239,49 @@ export default function ContractorJobFeed({
           </article>
         ))}
       </div>
+
+      {/* Blueprint Specs Modal */}
+      {selectedBlueprint && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-[#d7e8c3] animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-[#0d631b]">
+                <span className="material-symbols-outlined">architecture</span>
+                <h4 className="font-bold text-base text-[#151d19]">Work Order Blueprint</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBlueprint(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs font-mono bg-slate-50 p-3 rounded-2xl border border-slate-200 text-slate-700 mb-4">
+              <div><span className="text-slate-400">Order ID:</span> {selectedBlueprint.id}</div>
+              <div><span className="text-slate-400">Location:</span> {selectedBlueprint.address}</div>
+              <div><span className="text-slate-400">Material Grade:</span> VG-30 Hot Mix Bitumen</div>
+              <div><span className="text-slate-400">Target Depth:</span> 5.4 cm Compaction</div>
+              <div><span className="text-slate-400">Target Heading:</span> 284° WNW (±15°)</div>
+              <div><span className="text-slate-400">Estimated Escrow:</span> <strong className="text-[#0d631b]">{selectedBlueprint.payout}</strong></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const b = selectedBlueprint;
+                setSelectedBlueprint(null);
+                handleStartProof(b);
+              }}
+              className="w-full py-3 rounded-2xl bg-[#0d631b] text-white font-bold text-xs hover:bg-[#2e7d32] transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">photo_camera</span>
+              <span>Start Proof with this Blueprint</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
